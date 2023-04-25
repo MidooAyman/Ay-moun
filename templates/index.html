@@ -15,15 +15,21 @@ function googleTranslateElementInit() {
 <!-- Form and PayPal Button -->
 <form id="myForm" method="post">
   {% csrf_token %}
+  <div id="index-details"></div>
   <div style="display: flex; flex-direction: column; gap: 10px;">
     <input type="text" name="username" placeholder="Your Name" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);" required>
     <input type="text" name="adress" placeholder="Adress" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);">
     <input type="text" name="phone" placeholder="Phone Number" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);">
-    <input type="text" name="product_name" placeholder="Product Name In Detail" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);">
+    <label for="id_name">{{ form.name.label }}</label>
+    <input type="text" id="id_name" name="name" placeholder="Product name" value="{{ form.name.value }}" placeholder="{{ form.name.label }}" required>
     <input type="text" name="size" placeholder="Size And Color" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);">
     <input type="button" value="Save and Pay" onclick="submitForm()" style="padding: 10px; font-size: 18px; border-radius: 5px; border: none; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2); background-color: #ffc107; color: #fff; cursor: pointer;">
   </div>
 </form>
+
+{% if not des.later %}
+
+<!-- PayPal Button -->
 
 <h2>
   <div style="max-width: 300px; margin: 0 auto;">
@@ -45,3 +51,4 @@ function submitForm() {
   document.getElementById("paypalForm").submit();
 }
 </script>
+{% endif %}
