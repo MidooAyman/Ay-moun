@@ -1,121 +1,77 @@
-# minimist <sup>[![Version Badge][npm-version-svg]][package-url]</sup>
+# uid-safe
 
-[![github actions][actions-image]][actions-url]
-[![coverage][codecov-image]][codecov-url]
-[![License][license-image]][license-url]
-[![Downloads][downloads-image]][downloads-url]
+[![NPM Version][npm-image]][npm-url]
+[![NPM Downloads][downloads-image]][downloads-url]
+[![Node.js Version][node-version-image]][node-version-url]
+[![Build Status][travis-image]][travis-url]
+[![Test Coverage][coveralls-image]][coveralls-url]
 
-[![npm badge][npm-badge-png]][package-url]
+URL and cookie safe UIDs
 
-parse argument options
+Create cryptographically secure UIDs safe for both cookie and URL usage.
+This is in contrast to modules such as [rand-token](https://www.npmjs.com/package/rand-token)
+and [uid2](https://www.npmjs.com/package/uid2) whose UIDs are actually skewed
+due to the use of `%` and unnecessarily truncate the UID.
+Use this if you could still use UIDs with `-` and `_` in them.
 
-This module is the guts of optimist's argument parser without all the
-fanciful decoration.
+## Installation
 
-# example
-
-``` js
-var argv = require('minimist')(process.argv.slice(2));
-console.log(argv);
+```sh
+$ npm install uid-safe
 ```
 
-```
-$ node example/parse.js -a beep -b boop
-{ _: [], a: 'beep', b: 'boop' }
-```
+## API
 
-```
-$ node example/parse.js -x 3 -y 4 -n5 -abc --beep=boop foo bar baz
-{
-	_: ['foo', 'bar', 'baz'],
-	x: 3,
-	y: 4,
-	n: 5,
-	a: true,
-	b: true,
-	c: true,
-	beep: 'boop'
-}
+```js
+var uid = require('uid-safe')
 ```
 
-# security
+### uid(byteLength, callback)
 
-Previous versions had a prototype pollution bug that could cause privilege
-escalation in some circumstances when handling untrusted user input.
+Asynchronously create a UID with a specific byte length. Because `base64`
+encoding is used underneath, this is not the string length. For example,
+to create a UID of length 24, you want a byte length of 18.
 
-Please use version 1.2.6 or later:
-
-* https://security.snyk.io/vuln/SNYK-JS-MINIMIST-2429795 (version <=1.2.5)
-* https://snyk.io/vuln/SNYK-JS-MINIMIST-559764 (version <=1.2.3)
-
-# methods
-
-``` js
-var parseArgs = require('minimist')
+```js
+uid(18, function (err, string) {
+  if (err) throw err
+  // do something with the string
+})
 ```
 
-## var argv = parseArgs(args, opts={})
+### uid(byteLength)
 
-Return an argument object `argv` populated with the array arguments from `args`.
+Asynchronously create a UID with a specific byte length and return a
+`Promise`.
 
-`argv._` contains all the arguments that didn't have an option associated with
-them.
+**Note**: To use promises in Node.js _prior to 0.12_, promises must be
+"polyfilled" using `global.Promise = require('bluebird')`.
 
-Numeric-looking arguments will be returned as numbers unless `opts.string` or
-`opts.boolean` is set for that argument name.
-
-Any arguments after `'--'` will not be parsed and will end up in `argv._`.
-
-options can be:
-
-* `opts.string` - a string or array of strings argument names to always treat as
-strings
-* `opts.boolean` - a boolean, string or array of strings to always treat as
-booleans. if `true` will treat all double hyphenated arguments without equal signs
-as boolean (e.g. affects `--foo`, not `-f` or `--foo=bar`)
-* `opts.alias` - an object mapping string names to strings or arrays of string
-argument names to use as aliases
-* `opts.default` - an object mapping string argument names to default values
-* `opts.stopEarly` - when true, populate `argv._` with everything after the
-first non-option
-* `opts['--']` - when true, populate `argv._` with everything before the `--`
-and `argv['--']` with everything after the `--`. Here's an example:
-
-  ```
-  > require('./')('one two three -- four five --six'.split(' '), { '--': true })
-  {
-    _: ['one', 'two', 'three'],
-    '--': ['four', 'five', '--six']
-  }
-  ```
-
-  Note that with `opts['--']` set, parsing for arguments still stops after the
-  `--`.
-
-* `opts.unknown` - a function which is invoked with a command line parameter not
-defined in the `opts` configuration object. If the function returns `false`, the
-unknown option is not added to `argv`.
-
-# install
-
-With [npm](https://npmjs.org) do:
-
-```
-npm install minimist
+```js
+uid(18).then(function (string) {
+  // do something with the string
+})
 ```
 
-# license
+### uid.sync(byteLength)
 
-MIT
+A synchronous version of above.
 
-[package-url]: https://npmjs.org/package/minimist
-[npm-version-svg]: https://versionbadg.es/minimistjs/minimist.svg
-[npm-badge-png]: https://nodei.co/npm/minimist.png?downloads=true&stars=true
-[license-image]: https://img.shields.io/npm/l/minimist.svg
-[license-url]: LICENSE
-[downloads-image]: https://img.shields.io/npm/dm/minimist.svg
-[downloads-url]: https://npm-stat.com/charts.html?package=minimist
-[codecov-image]: https://codecov.io/gh/minimistjs/minimist/branch/main/graphs/badge.svg
-[codecov-url]: https://app.codecov.io/gh/minimistjs/minimist/
-[actions-image]: https://img.shields.io/endpoint?url=https://github-actions-badge-u3jn4tfpocch.runkit.sh/minimistjs/minimist
-[actions-url]: https://github.com/minimistjs/minimist/actions
+```js
+var string = uid.sync(18)
+```
+
+## License
+
+[MIT](LICENSE)
+
+[npm-image]: https://img.shields.io/npm/v/uid-safe.svg
+[npm-url]: https://npmjs.org/package/uid-safe
+[node-version-image]: https://img.shields.io/node/v/uid-safe.svg
+[node-version-url]: https://nodejs.org/en/download/
+[travis-image]: https://img.shields.io/travis/crypto-utils/uid-safe/master.svg
+[travis-url]: https://travis-ci.org/crypto-utils/uid-safe
+[coveralls-image]: https://img.shields.io/coveralls/crypto-utils/uid-safe/master.svg
+[coveralls-url]: https://coveralls.io/r/crypto-utils/uid-safe?branch=master
+[downloads-image]: https://img.shields.io/npm/dm/uid-safe.svg
+[downloads-url]: https://npmjs.org/package/uid-safe
