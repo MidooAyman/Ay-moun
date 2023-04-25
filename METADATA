@@ -1,246 +1,114 @@
 Metadata-Version: 2.1
-Name: asgiref
-Version: 3.6.0
-Summary: ASGI specs, helper code, and adapters
-Home-page: https://github.com/django/asgiref/
-Author: Django Software Foundation
-Author-email: foundation@djangoproject.com
-License: BSD-3-Clause
-Project-URL: Documentation, https://asgi.readthedocs.io/
-Project-URL: Further Documentation, https://docs.djangoproject.com/en/stable/topics/async/#async-adapter-functions
-Project-URL: Changelog, https://github.com/django/asgiref/blob/master/CHANGELOG.txt
-Classifier: Development Status :: 5 - Production/Stable
-Classifier: Environment :: Web Environment
+Name: backports.zoneinfo
+Version: 0.2.1
+Summary: Backport of the standard library zoneinfo module
+Home-page: https://github.com/pganssle/zoneinfo
+Author: Python Software Foundation
+Author-email: datetime-sig@python.org
+License: Apache-2.0
+Project-URL: Source, https://github.com/pganssle/zoneinfo
+Project-URL: Documentation, https://zoneinfo.readthedocs.io/en/latest/
+Project-URL: Bug Reports, https://github.com/pganssle/zoneinfo/issues
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: BSD License
-Classifier: Operating System :: OS Independent
-Classifier: Programming Language :: Python
+Classifier: License :: OSI Approved :: Apache Software License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.6
 Classifier: Programming Language :: Python :: 3.7
 Classifier: Programming Language :: Python :: 3.8
-Classifier: Programming Language :: Python :: 3.9
-Classifier: Programming Language :: Python :: 3.10
-Classifier: Programming Language :: Python :: 3.11
-Classifier: Topic :: Internet :: WWW/HTTP
-Requires-Python: >=3.7
-License-File: LICENSE
-Requires-Dist: typing-extensions ; python_version < "3.8"
-Provides-Extra: tests
-Requires-Dist: pytest ; extra == 'tests'
-Requires-Dist: pytest-asyncio ; extra == 'tests'
-Requires-Dist: mypy (>=0.800) ; extra == 'tests'
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: importlib-resources ; python_version < "3.7"
+Provides-Extra: tzdata
+Requires-Dist: tzdata ; extra == 'tzdata'
 
-asgiref
-=======
+# `backports.zoneinfo`: Backport of the standard library module `zoneinfo`
 
-.. image:: https://api.travis-ci.org/django/asgiref.svg
-    :target: https://travis-ci.org/django/asgiref
+This package was originally the reference implementation for [PEP 615](https://www.python.org/dev/peps/pep-0615/), which proposes support for the IANA time zone database in the standard library, and now serves as a backport to Python 3.6+ (including PyPy).
 
-.. image:: https://img.shields.io/pypi/v/asgiref.svg
-    :target: https://pypi.python.org/pypi/asgiref
+This exposes the `backports.zoneinfo` module, which is a backport of the [`zoneinfo`](https://docs.python.org/3.9/library/zoneinfo.html#module-zoneinfo) module. The backport's documentation can be found [on readthedocs](https://zoneinfo.readthedocs.io/en/latest/).
 
-ASGI is a standard for Python asynchronous web apps and servers to communicate
-with each other, and positioned as an asynchronous successor to WSGI. You can
-read more at https://asgi.readthedocs.io/en/latest/
+The module uses the system time zone data if available, and falls back to the [`tzdata`](https://tzdata.readthedocs.io/en/latest/) package (available [on PyPI](https://pypi.org/project/tzdata/)) if installed.
 
-This package includes ASGI base libraries, such as:
+## Installation and depending on this library
 
-* Sync-to-async and async-to-sync function wrappers, ``asgiref.sync``
-* Server base classes, ``asgiref.server``
-* A WSGI-to-ASGI adapter, in ``asgiref.wsgi``
+This module is called [`backports.zoneinfo`](https://pypi.org/project/backports.zoneinfo) on PyPI. To install it in your local environment, use:
 
+```
+pip install backports.zoneinfo
+```
 
-Function wrappers
------------------
+Or (particularly on Windows), you can also use the `tzdata` extra (which basically just declares a dependency on `tzdata`, so this doesn't actually save you any typing 😅):
 
-These allow you to wrap or decorate async or sync functions to call them from
-the other style (so you can call async functions from a synchronous thread,
-or vice-versa).
+```
+pip install backports.zoneinfo[tzdata]
+```
 
-In particular:
+If you want to use this in your application, it is best to use [PEP 508 environment markers](https://www.python.org/dev/peps/pep-0508/#environment-markers) to declare a dependency *conditional on the Python version*:
 
-* AsyncToSync lets a synchronous subthread stop and wait while the async
-  function is called on the main thread's event loop, and then control is
-  returned to the thread when the async function is finished.
+```
+backports.zoneinfo;python_version<"3.9"
+```
 
-* SyncToAsync lets async code call a synchronous function, which is run in
-  a threadpool and control returned to the async coroutine when the synchronous
-  function completes.
+Support for `backports.zoneinfo` in Python 3.9+ is currently minimal, since it is expected that you would use the standard library `zoneinfo` module instead.
 
-The idea is to make it easier to call synchronous APIs from async code and
-asynchronous APIs from synchronous code so it's easier to transition code from
-one style to the other. In the case of Channels, we wrap the (synchronous)
-Django view system with SyncToAsync to allow it to run inside the (asynchronous)
-ASGI server.
+## Use
 
-Note that exactly what threads things run in is very specific, and aimed to
-keep maximum compatibility with old synchronous code. See
-"Synchronous code & Threads" below for a full explanation. By default,
-``sync_to_async`` will run all synchronous code in the program in the same
-thread for safety reasons; you can disable this for more performance with
-``@sync_to_async(thread_sensitive=False)``, but make sure that your code does
-not rely on anything bound to threads (like database connections) when you do.
+The `backports.zoneinfo` module should be a drop-in replacement for the Python 3.9 standard library module `zoneinfo`. If you do not support anything earlier than Python 3.9, **you do not need this library**; if you are supporting Python 3.6+, you may want to use this idiom to "fall back" to ``backports.zoneinfo``:
 
+```python
+try:
+    import zoneinfo
+except ImportError:
+    from backports import zoneinfo
+```
 
-Threadlocal replacement
------------------------
+To get access to time zones with this module, construct a `ZoneInfo` object and attach it to your datetime:
 
-This is a drop-in replacement for ``threading.local`` that works with both
-threads and asyncio Tasks. Even better, it will proxy values through from a
-task-local context to a thread-local context when you use ``sync_to_async``
-to run things in a threadpool, and vice-versa for ``async_to_sync``.
+```python
+>>> from backports.zoneinfo import ZoneInfo
+>>> from datetime import datetime, timedelta, timezone
+>>> dt = datetime(1992, 3, 1, tzinfo=ZoneInfo("Europe/Minsk"))
+>>> print(dt)
+1992-03-01 00:00:00+02:00
+>>> print(dt.utcoffset())
+2:00:00
+>>> print(dt.tzname())
+EET
+```
 
-If you instead want true thread- and task-safety, you can set
-``thread_critical`` on the Local object to ensure this instead.
+Arithmetic works as expected without the need for a "normalization" step:
 
+```python
+>>> dt += timedelta(days=90)
+>>> print(dt)
+1992-05-30 00:00:00+03:00
+>>> dt.utcoffset()
+datetime.timedelta(seconds=10800)
+>>> dt.tzname()
+'EEST'
+```
 
-Server base classes
--------------------
+Ambiguous and imaginary times are handled using the `fold` attribute added in [PEP 495](https://www.python.org/dev/peps/pep-0495/):
 
-Includes a ``StatelessServer`` class which provides all the hard work of
-writing a stateless server (as in, does not handle direct incoming sockets
-but instead consumes external streams or sockets to work out what is happening).
+```python
+>>> dt = datetime(2020, 11, 1, 1, tzinfo=ZoneInfo("America/Chicago"))
+>>> print(dt)
+2020-11-01 01:00:00-05:00
+>>> print(dt.replace(fold=1))
+2020-11-01 01:00:00-06:00
 
-An example of such a server would be a chatbot server that connects out to
-a central chat server and provides a "connection scope" per user chatting to
-it. There's only one actual connection, but the server has to separate things
-into several scopes for easier writing of the code.
+>>> UTC = timezone.utc
+>>> print(dt.astimezone(UTC))
+2020-11-01 06:00:00+00:00
+>>> print(dt.replace(fold=1).astimezone(UTC))
+2020-11-01 07:00:00+00:00
+```
 
-You can see an example of this being used in `frequensgi <https://github.com/andrewgodwin/frequensgi>`_.
+# Contributing
 
+Currently we are not accepting contributions to this repository because we have not put the CLA in place and we would like to avoid complicating the process of adoption into the standard library. Contributions to [CPython](https://github.com/python/cpython) will eventually be backported to this repository — see [the Python developer's guide](https://devguide.python.org/) for more information on how to contribute to CPython.
 
-WSGI-to-ASGI adapter
---------------------
 
-Allows you to wrap a WSGI application so it appears as a valid ASGI application.
-
-Simply wrap it around your WSGI application like so::
-
-    asgi_application = WsgiToAsgi(wsgi_application)
-
-The WSGI application will be run in a synchronous threadpool, and the wrapped
-ASGI application will be one that accepts ``http`` class messages.
-
-Please note that not all extended features of WSGI may be supported (such as
-file handles for incoming POST bodies).
-
-
-Dependencies
-------------
-
-``asgiref`` requires Python 3.7 or higher.
-
-
-Contributing
-------------
-
-Please refer to the
-`main Channels contributing docs <https://github.com/django/channels/blob/master/CONTRIBUTING.rst>`_.
-
-
-Testing
-'''''''
-
-To run tests, make sure you have installed the ``tests`` extra with the package::
-
-    cd asgiref/
-    pip install -e .[tests]
-    pytest
-
-
-Building the documentation
-''''''''''''''''''''''''''
-
-The documentation uses `Sphinx <http://www.sphinx-doc.org>`_::
-
-    cd asgiref/docs/
-    pip install sphinx
-
-To build the docs, you can use the default tools::
-
-    sphinx-build -b html . _build/html  # or `make html`, if you've got make set up
-    cd _build/html
-    python -m http.server
-
-...or you can use ``sphinx-autobuild`` to run a server and rebuild/reload
-your documentation changes automatically::
-
-    pip install sphinx-autobuild
-    sphinx-autobuild . _build/html
-
-
-Releasing
-'''''''''
-
-To release, first add details to CHANGELOG.txt and update the version number in ``asgiref/__init__.py``.
-
-Then, build and push the packages::
-
-    python -m build
-    twine upload dist/*
-    rm -r build/ dist/
-
-
-Implementation Details
-----------------------
-
-Synchronous code & threads
-''''''''''''''''''''''''''
-
-The ``asgiref.sync`` module provides two wrappers that let you go between
-asynchronous and synchronous code at will, while taking care of the rough edges
-for you.
-
-Unfortunately, the rough edges are numerous, and the code has to work especially
-hard to keep things in the same thread as much as possible. Notably, the
-restrictions we are working with are:
-
-* All synchronous code called through ``SyncToAsync`` and marked with
-  ``thread_sensitive`` should run in the same thread as each other (and if the
-  outer layer of the program is synchronous, the main thread)
-
-* If a thread already has a running async loop, ``AsyncToSync`` can't run things
-  on that loop if it's blocked on synchronous code that is above you in the
-  call stack.
-
-The first compromise you get to might be that ``thread_sensitive`` code should
-just run in the same thread and not spawn in a sub-thread, fulfilling the first
-restriction, but that immediately runs you into the second restriction.
-
-The only real solution is to essentially have a variant of ThreadPoolExecutor
-that executes any ``thread_sensitive`` code on the outermost synchronous
-thread - either the main thread, or a single spawned subthread.
-
-This means you now have two basic states:
-
-* If the outermost layer of your program is synchronous, then all async code
-  run through ``AsyncToSync`` will run in a per-call event loop in arbitrary
-  sub-threads, while all ``thread_sensitive`` code will run in the main thread.
-
-* If the outermost layer of your program is asynchronous, then all async code
-  runs on the main thread's event loop, and all ``thread_sensitive`` synchronous
-  code will run in a single shared sub-thread.
-
-Crucially, this means that in both cases there is a thread which is a shared
-resource that all ``thread_sensitive`` code must run on, and there is a chance
-that this thread is currently blocked on its own ``AsyncToSync`` call. Thus,
-``AsyncToSync`` needs to act as an executor for thread code while it's blocking.
-
-The ``CurrentThreadExecutor`` class provides this functionality; rather than
-simply waiting on a Future, you can call its ``run_until_future`` method and
-it will run submitted code until that Future is done. This means that code
-inside the call can then run code on your thread.
-
-
-Maintenance and Security
-------------------------
-
-To report security issues, please contact security@djangoproject.com. For GPG
-signatures and more security process information, see
-https://docs.djangoproject.com/en/dev/internals/security/.
-
-To report bugs or request new features, please open a new GitHub issue.
-
-This repository is part of the Channels project. For the shepherd and maintenance team, please see the
-`main Channels readme <https://github.com/django/channels/blob/master/README.rst>`_.
