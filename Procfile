@@ -1,3 +1,2 @@
-web: gunicorn complete_django_beginner.
-wsgi:myapp --log-file -
---log-level debug
+web: gunicorn myapp.wsgi --log-file -
+worker: celery -A myapp worker -l info
