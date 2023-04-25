@@ -1,94 +1,34 @@
-import { createFrame, extend, toString } from './utils';
-import Exception from './exception';
-import { registerDefaultHelpers } from './helpers';
-import { registerDefaultDecorators } from './decorators';
-import logger from './logger';
-import { resetLoggedProperties } from './internal/proto-access';
+import parser from './parser';
+import WhitespaceControl from './whitespace-control';
+import * as Helpers from './helpers';
+import { extend } from '../utils';
 
-export const VERSION = '4.7.7';
-export const COMPILER_REVISION = 8;
-export const LAST_COMPATIBLE_COMPILER_REVISION = 7;
+export { parser };
 
-export const REVISION_CHANGES = {
-  1: '<= 1.0.rc.2', // 1.0.rc.2 is actually rev2 but doesn't report it
-  2: '== 1.0.0-rc.3',
-  3: '== 1.0.0-rc.4',
-  4: '== 1.x.x',
-  5: '== 2.0.0-alpha.x',
-  6: '>= 2.0.0-beta.1',
-  7: '>= 4.0.0 <4.3.0',
-  8: '>= 4.3.0'
-};
+let yy = {};
+extend(yy, Helpers);
 
-const objectType = '[object Object]';
+export function parseWithoutProcessing(input, options) {
+  // Just return if an already-compiled AST was passed in.
+  if (input.type === 'Program') {
+    return input;
+  }
 
-export function HandlebarsEnvironment(helpers, partials, decorators) {
-  this.helpers = helpers || {};
-  this.partials = partials || {};
-  this.decorators = decorators || {};
+  parser.yy = yy;
 
-  registerDefaultHelpers(this);
-  registerDefaultDecorators(this);
+  // Altering the shared object here, but this is ok as parser is a sync operation
+  yy.locInfo = function(locInfo) {
+    return new yy.SourceLocation(options && options.srcName, locInfo);
+  };
+
+  let ast = parser.parse(input);
+
+  return ast;
 }
 
-HandlebarsEnvironment.prototype = {
-  constructor: HandlebarsEnvironment,
+export function parse(input, options) {
+  let ast = parseWithoutProcessing(input, options);
+  let strip = new WhitespaceControl(options);
 
-  logger: logger,
-  log: logger.log,
-
-  registerHelper: function(name, fn) {
-    if (toString.call(name) === objectType) {
-      if (fn) {
-        throw new Exception('Arg not supported with multiple helpers');
-      }
-      extend(this.helpers, name);
-    } else {
-      this.helpers[name] = fn;
-    }
-  },
-  unregisterHelper: function(name) {
-    delete this.helpers[name];
-  },
-
-  registerPartial: function(name, partial) {
-    if (toString.call(name) === objectType) {
-      extend(this.partials, name);
-    } else {
-      if (typeof partial === 'undefined') {
-        throw new Exception(
-          `Attempting to register a partial called "${name}" as undefined`
-        );
-      }
-      this.partials[name] = partial;
-    }
-  },
-  unregisterPartial: function(name) {
-    delete this.partials[name];
-  },
-
-  registerDecorator: function(name, fn) {
-    if (toString.call(name) === objectType) {
-      if (fn) {
-        throw new Exception('Arg not supported with multiple decorators');
-      }
-      extend(this.decorators, name);
-    } else {
-      this.decorators[name] = fn;
-    }
-  },
-  unregisterDecorator: function(name) {
-    delete this.decorators[name];
-  },
-  /**
-   * Reset the memory of illegal property accesses that have already been logged.
-   * @deprecated should only be used in handlebars test-cases
-   */
-  resetLoggedPropertyAccesses() {
-    resetLoggedProperties();
-  }
-};
-
-export let log = logger.log;
-
-export { createFrame, logger };
+  return strip.accept(ast);
+}
