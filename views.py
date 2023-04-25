@@ -16,9 +16,9 @@ def index(request):
     if username is not None:
         data = Login(username=username, adress=adress, phone=phone, product_name=product_name, size=size)
         data.save()
-    return render(request, 'form.html')
+    return render(request, 'index.html')
   else:
-         return render(request, 'form.html')
+         return render(request, 'index.html')
 
 
 
