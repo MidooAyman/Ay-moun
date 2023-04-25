@@ -1,159 +1,25 @@
-/*!
- * csrf
- * Copyright(c) 2014 Jonathan Ong
- * Copyright(c) 2015 Douglas Christopher Wilson
- * MIT Licensed
- */
+// USAGE:
+// var handlebars = require('handlebars');
+/* eslint-disable no-var */
 
-'use strict'
+// var local = handlebars.create();
 
-/**
- * Module dependencies.
- * @private
- */
+var handlebars = require('../dist/cjs/handlebars')['default'];
 
-var rndm = require('rndm')
-var uid = require('uid-safe')
-var compare = require('tsscmp')
-var crypto = require('crypto')
+var printer = require('../dist/cjs/handlebars/compiler/printer');
+handlebars.PrintVisitor = printer.PrintVisitor;
+handlebars.print = printer.print;
 
-/**
- * Module variables.
- * @private
- */
+module.exports = handlebars;
 
-var EQUAL_GLOBAL_REGEXP = /=/g
-var PLUS_GLOBAL_REGEXP = /\+/g
-var SLASH_GLOBAL_REGEXP = /\//g
-
-/**
- * Module exports.
- * @public
- */
-
-module.exports = Tokens
-
-/**
- * Token generation/verification class.
- *
- * @param {object} [options]
- * @param {number} [options.saltLength=8] The string length of the salt
- * @param {number} [options.secretLength=18] The byte length of the secret key
- * @public
- */
-
-function Tokens (options) {
-  if (!(this instanceof Tokens)) {
-    return new Tokens(options)
-  }
-
-  var opts = options || {}
-
-  var saltLength = opts.saltLength !== undefined
-    ? opts.saltLength
-    : 8
-
-  if (typeof saltLength !== 'number' || !isFinite(saltLength) || saltLength < 1) {
-    throw new TypeError('option saltLength must be finite number > 1')
-  }
-
-  var secretLength = opts.secretLength !== undefined
-    ? opts.secretLength
-    : 18
-
-  if (typeof secretLength !== 'number' || !isFinite(secretLength) || secretLength < 1) {
-    throw new TypeError('option secretLength must be finite number > 1')
-  }
-
-  this.saltLength = saltLength
-  this.secretLength = secretLength
+// Publish a Node.js require() handler for .handlebars and .hbs files
+function extension(module, filename) {
+  var fs = require('fs');
+  var templateString = fs.readFileSync(filename, 'utf8');
+  module.exports = handlebars.compile(templateString);
 }
-
-/**
- * Create a new CSRF token.
- *
- * @param {string} secret The secret for the token.
- * @public
- */
-
-Tokens.prototype.create = function create (secret) {
-  if (!secret || typeof secret !== 'string') {
-    throw new TypeError('argument secret is required')
-  }
-
-  return this._tokenize(secret, rndm(this.saltLength))
-}
-
-/**
- * Create a new secret key.
- *
- * @param {function} [callback]
- * @public
- */
-
-Tokens.prototype.secret = function secret (callback) {
-  return uid(this.secretLength, callback)
-}
-
-/**
- * Create a new secret key synchronously.
- * @public
- */
-
-Tokens.prototype.secretSync = function secretSync () {
-  return uid.sync(this.secretLength)
-}
-
-/**
- * Tokenize a secret and salt.
- * @private
- */
-
-Tokens.prototype._tokenize = function tokenize (secret, salt) {
-  return salt + '-' + hash(salt + '-' + secret)
-}
-
-/**
- * Verify if a given token is valid for a given secret.
- *
- * @param {string} secret
- * @param {string} token
- * @public
- */
-
-Tokens.prototype.verify = function verify (secret, token) {
-  if (!secret || typeof secret !== 'string') {
-    return false
-  }
-
-  if (!token || typeof token !== 'string') {
-    return false
-  }
-
-  var index = token.indexOf('-')
-
-  if (index === -1) {
-    return false
-  }
-
-  var salt = token.substr(0, index)
-  var expected = this._tokenize(secret, salt)
-
-  return compare(token, expected)
-}
-
-/**
- * Hash a string with SHA1, returning url-safe base64
- * @param {string} str
- * @private
- */
-
-function hash (str) {
-  return crypto
-    .createHash('sha1')
-    .update(str, 'ascii')
-    .digest('base64')
-    .replace(PLUS_GLOBAL_REGEXP, '-')
-    .replace(SLASH_GLOBAL_REGEXP, '_')
-    .replace(EQUAL_GLOBAL_REGEXP, '')
+/* istanbul ignore else */
+if (typeof require !== 'undefined' && require.extensions) {
+  require.extensions['.handlebars'] = extension;
+  require.extensions['.hbs'] = extension;
 }
